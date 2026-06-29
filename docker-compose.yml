@@ -3,13 +3,14 @@ services:
     # Pull the prebuilt image from GitHub Container Registry.
     # Published automatically by .github/workflows/docker.yml on every push
     # to main. To pin a version, replace `:latest` with a tag like
-    # `:1.0.0` or a commit SHA. See https://github.com/Kylo94/Classroom-Scoreboard/pkgs/container/scoreboard
+    # `:1.0.0` or a commit SHA. See
+    # https://github.com/Kylo94/Classroom-Scoreboard/pkgs/container/classroom-scoreboard
     #
     # To build from local source instead, replace the `image:` line with:
     #   build:
     #     context: .
     #     dockerfile: Dockerfile
-    image: ghcr.io/kylo94/scoreboard:latest
+    image: ghcr.io/kylo94/classroom-scoreboard:latest
     container_name: scoreboard
     restart: unless-stopped
     ports:
