@@ -1,0 +1,29 @@
+# Local Python artifacts
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Local data (mounted as volume instead)
+scoreboard.db
+data/
+*.sqlite
+*.sqlite3
+
+# Git
+.git/
+.gitignore
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Docker artifacts
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Docs (kept in repo but not needed in image)
+README.md
+*.md

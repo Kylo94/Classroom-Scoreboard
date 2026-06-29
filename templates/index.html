@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>课堂记分板</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}" />
+</head>
+<body>
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+  <div class="bg-blob blob-3"></div>
+
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🎓</div>
+        <div>
+          <h1>课堂记分板</h1>
+          <p>Classroom Scoreboard</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>导航</h2>
+        <ul class="class-list" style="margin-bottom: 14px;">
+          <li><a href="/admin" class="class-link"><span class="class-name">🗄️ 数据管理</span></a></li>
+        </ul>
+        <h2>班级</h2>
+        <form method="post" action="/classes/create" class="inline-form">
+          <input
+            type="text"
+            name="name"
+            placeholder="新建班级..."
+            maxlength="40"
+            required
+          />
+          <button type="submit" class="btn btn-primary btn-sm" title="新建班级">+</button>
+        </form>
+
+        <ul class="class-list">
+          {% for c in classes %}
+            <li class="{{ 'active' if selected_class and selected_class.id == c.id else '' }}">
+              <a href="/class/{{ c.id }}" class="class-link">
+                <span class="class-name">{{ c.name }}</span>
+              </a>
+              <form method="post" action="/classes/{{ c.id }}/delete" class="inline-form"
+                    onsubmit="return confirm('确定删除班级「{{ c.name }}」?该班级所有学生将被删除。');">
+                <button type="submit" class="icon-btn danger" title="删除班级">×</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="empty-hint">还没有班级</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="main-header">
+        <div>
+          {% if selected_class %}
+            <h2 class="class-title">{{ selected_class.name }}</h2>
+            <p class="subtitle">{{ students|length }} 名学生</p>
+          {% else %}
+            <h2 class="class-title">欢迎使用</h2>
+            <p class="subtitle">请在左侧创建或选择一个班级</p>
+          {% endif %}
+        </div>
+
+        {% if selected_class %}
+          <div class="header-actions">
+            <button type="button" class="btn btn-accent"
+                    onclick="openPicker({{ students|length }}, {{ selected_class.id }})"
+                    {% if not students %}disabled{% endif %}>
+              🎲 随机提问
+            </button>
+            <form method="post" action="/classes/{{ selected_class.id }}/reset"
+                  onsubmit="return confirm('确定要将本班所有学生的分数清零吗?');">
+              <button type="submit" class="btn btn-ghost">🔄 清零分数</button>
+            </form>
+          </div>
+        {% endif %}
+      </header>
+
+      {% if selected_class %}
+        <section class="add-student">
+          <form method="post" action="/classes/{{ selected_class.id }}/students/add" class="inline-form">
+            <input
+              type="text"
+              name="name"
+              placeholder="输入学生姓名..."
+              maxlength="20"
+              required
+              autocomplete="off"
+            />
+            <button type="submit" class="btn btn-primary">添加学生</button>
+          </form>
+        </section>
+
+        {% if students %}
+          <section class="student-grid">
+            {% for s in students %}
+              <article class="student-card" data-student-id="{{ s.id }}">
+                <button class="remove-btn" title="移除学生"
+                        onclick="removeStudent({{ selected_class.id }}, {{ s.id }}, '{{ s.name|e }}')">×</button>
+
+                <div class="avatar">{{ s.name[0]|upper }}</div>
+                <div class="name-row">
+                  <h3 class="student-name" data-original="{{ s.name|e }}">{{ s.name }}</h3>
+                  <button class="rename-btn" title="改名"
+                          onclick="startRename(this)">✎</button>
+                </div>
+
+                <div class="score-display
+                            {{ 'positive' if s.score > 0 else '' }}
+                            {{ 'negative' if s.score < 0 else '' }}">
+                  <span class="score-value">{{ s.score }}</span>
+                  <span class="score-label">分</span>
+                </div>
+
+                <div class="score-buttons">
+                  <button class="score-btn minus" data-delta="-5" title="-5">-5</button>
+                  <button class="score-btn minus" data-delta="-1" title="-1">-1</button>
+                  <button class="score-btn plus" data-delta="1" title="+1">+1</button>
+                  <button class="score-btn plus" data-delta="5" title="+5">+5</button>
+                </div>
+              </article>
+            {% endfor %}
+          </section>
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <p>本班还没有学生</p>
+            <p class="hint">在上方输入姓名即可添加学生</p>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🏫</div>
+          <p>请先创建一个班级</p>
+          <p class="hint">在左侧侧栏输入班级名称开始使用</p>
+        </div>
+      {% endif %}
+    </main>
+  </div>
+
+  <script>
+    const CLASS_ID = {{ selected_class.id if selected_class else 'null' }};
+    const STUDENTS = [
+      {%- for s in students -%}
+        {id: {{ s.id }}, name: {{ s.name|tojson }}}{% if not loop.last %},{% endif %}
+      {%- endfor -%}
+    ];
+  </script>
+  <script src="{{ url_for('static', path='app.js') }}"></script>
+
+  <!-- Picker modal -->
+  <div id="pickerModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="closePicker()"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-eyebrow">🎲 随机提问</span>
+        <button class="icon-btn" onclick="closePicker()" title="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="pickerAvatar" class="picker-avatar">?</div>
+        <div id="pickerName" class="picker-name">准备中...</div>
+        <div id="pickerHint" class="picker-hint">正在挑选幸运儿</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closePicker()">关闭</button>
+        <button id="pickerAgain" class="btn btn-primary" onclick="spinPicker()" disabled>
+          再来一次
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

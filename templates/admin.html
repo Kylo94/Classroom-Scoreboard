@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>数据管理 · 课堂记分板</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}" />
+</head>
+<body>
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+  <div class="bg-blob blob-3"></div>
+
+  <div class="app admin-app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🗄️</div>
+        <div>
+          <h1>数据管理</h1>
+          <p>Data Admin</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>导航</h2>
+        <ul class="class-list">
+          <li><a href="/" class="class-link"><span class="class-name">← 返回记分板</span></a></li>
+          <li class="active">
+            <a href="/admin" class="class-link"><span class="class-name">班级总览</span></a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>导出</h2>
+        <a href="/admin/export/json" class="export-btn" download>
+          ⬇ 下载 JSON 备份
+        </a>
+        <a href="/admin/export/csv" class="export-btn" download>
+          ⬇ 下载 CSV 表格
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="main-header">
+        <div>
+          <h2 class="class-title">班级总览</h2>
+          <p class="subtitle">所有班级与学生的当前分数</p>
+        </div>
+        <div class="header-actions">
+          <span class="pill">数据库: SQLite · scoreboard.db</span>
+        </div>
+      </header>
+
+      <!-- Stats -->
+      <section class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">班级数</div>
+          <div class="stat-value">{{ total_classes }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">学生总数</div>
+          <div class="stat-value">{{ total_students }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">全部分数合计</div>
+          <div class="stat-value">{{ grand_score }}</div>
+        </div>
+      </section>
+
+      {% if classes %}
+        <section class="admin-list">
+          {% for c in classes %}
+            <article class="admin-class">
+              <header class="admin-class-head">
+                <div>
+                  <h3 class="admin-class-name">
+                    <a href="/class/{{ c.id }}">{{ c.name }}</a>
+                  </h3>
+                  <div class="admin-class-meta">
+                    创建于 {{ c.created_at }} · 共 {{ c.student_count }} 名学生
+                  </div>
+                </div>
+                <div class="admin-class-stats">
+                  <span class="stat-chip">总分 {{ c.total_score }}</span>
+                  <span class="stat-chip">最高 {{ c.max_score }}</span>
+                  {% if c.student_count %}
+                    <span class="stat-chip">平均 {{ '%.1f'|format(c.avg_score) }}</span>
+                  {% endif %}
+                </div>
+              </header>
+
+              {% if c.students %}
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th class="col-rank">#</th>
+                      <th>姓名</th>
+                      <th class="col-score">分数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for s in c.students %}
+                      <tr>
+                        <td class="col-rank">{{ loop.index }}</td>
+                        <td>
+                          <span class="mini-avatar">{{ s.name[0]|upper }}</span>
+                          {{ s.name }}
+                        </td>
+                        <td class="col-score">
+                          <span class="score-pill
+                                       {{ 'positive' if s.score > 0 else '' }}
+                                       {{ 'negative' if s.score < 0 else '' }}">
+                            {{ s.score }}
+                          </span>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <p class="admin-empty">本班暂无学生</p>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </section>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🗂️</div>
+          <p>数据库还没有任何班级</p>
+          <p class="hint"><a href="/">前往记分板</a> 创建第一个班级</p>
+        </div>
+      {% endif %}
+    </main>
+  </div>
+</body>
+</html>

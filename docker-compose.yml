@@ -1,0 +1,25 @@
+services:
+  scoreboard:
+    # Build from local source by default; override with `image:` to pull
+    # the prebuilt image from ghcr.io (see README).
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: scoreboard:local
+    container_name: scoreboard
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist the SQLite database on the host so it survives container
+      # restarts and image upgrades.
+      - ./data:/app/data
+    environment:
+      # Override DB location to live in the mounted volume.
+      - SCOREBOARD_DB=/app/data/scoreboard.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
