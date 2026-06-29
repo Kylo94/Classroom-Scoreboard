@@ -57,10 +57,17 @@ ENV SCOREBOARD_DB=/app/data/scoreboard.db
 
 USER app
 
+# Copy entrypoint that fixes volume ownership at startup, then mark it
+# executable. Keep it owned by root so the non-root `app` user can still
+# exec it.
+COPY --chown=root:root entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 EXPOSE 8000
 
 # Simple healthcheck against the home page.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)" || exit 1
 
+ENTRYPOINT ["entrypoint.sh"]
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
