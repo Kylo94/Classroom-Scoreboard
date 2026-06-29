@@ -1,19 +1,23 @@
 services:
   scoreboard:
-    # Build from local source by default; override with `image:` to pull
-    # the prebuilt image from ghcr.io (see README).
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: scoreboard:local
+    # Pull the prebuilt image from GitHub Container Registry.
+    # Published automatically by .github/workflows/docker.yml on every push
+    # to main. To pin a version, replace `:latest` with a tag like
+    # `:1.0.0` or a commit SHA. See https://github.com/Kylo94/Classroom-Scoreboard/pkgs/container/scoreboard
+    #
+    # To build from local source instead, replace the `image:` line with:
+    #   build:
+    #     context: .
+    #     dockerfile: Dockerfile
+    image: ghcr.io/kylo94/scoreboard:latest
     container_name: scoreboard
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8043:8000"
     volumes:
       # Persist the SQLite database on the host so it survives container
       # restarts and image upgrades.
-      - ./data:/app/data
+      - ./vol1/@appshare/classroom.data:/app/data
     environment:
       # Override DB location to live in the mounted volume.
       - SCOREBOARD_DB=/app/data/scoreboard.db
