@@ -55,13 +55,12 @@ COPY --chown=app:app static ./static
 RUN mkdir -p /app/data && chown -R app:app /app/data
 ENV SCOREBOARD_DB=/app/data/scoreboard.db
 
-USER app
-
-# Copy entrypoint that fixes volume ownership at startup, then mark it
-# executable. Keep it owned by root so the non-root `app` user can still
-# exec it.
+# Copy entrypoint and make it executable BEFORE switching to non-root.
+# (chmod on /usr/local/bin must run as root.)
 COPY --chown=root:root entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+USER app
 
 EXPOSE 8000
 
