@@ -7,8 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1
 
-# Install uv (fast Python package manager).
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+# Install uv (fast Python package manager). Pin a specific version for
+# reproducible builds.
+COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
@@ -17,7 +18,17 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install runtime deps into the system Python (no virtualenv in container).
-RUN uv pip install --system --no-cache -r uv.lock
+# `uv export` converts uv.lock to a standard requirements.txt that
+# `uv pip install --system` can consume. This gives us reproducible builds
+# from the lockfile while installing into the system Python.
+#   --frozen        : fail if uv.lock would change (no surprise upgrades)
+#   --no-dev        : skip the [dependency-groups].dev group
+#   --no-hashes     : omit hashes (not needed; lockfile pins versions)
+#   --no-cache      : don't keep the download cache in the image layer
+RUN uv export --frozen --no-dev --no-hashes --format requirements-txt \
+        > /tmp/requirements.txt \
+    && uv pip install --system --no-cache -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
 
 # ---------- Runtime stage: slim image with just the app ----------
 FROM python:3.12-slim AS runtime
