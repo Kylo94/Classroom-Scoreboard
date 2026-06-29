@@ -18,7 +18,7 @@ services:
     volumes:
       # Persist the SQLite database on the host so it survives container
       # restarts and image upgrades.
-      - ./vol1/@appshare/classroom.data:/app/data
+      - ./vol1/@appshare/classroom/data:/app/data
     environment:
       # Override DB location to live in the mounted volume.
       - SCOREBOARD_DB=/app/data/scoreboard.db
